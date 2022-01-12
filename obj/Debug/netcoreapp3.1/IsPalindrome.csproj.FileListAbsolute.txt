@@ -1,0 +1,12 @@
+/Volumes/Galaxy/Projects/IsPalindrome/obj/Debug/netcoreapp3.1/IsPalindrome.csprojAssemblyReference.cache
+/Volumes/Galaxy/Projects/IsPalindrome/obj/Debug/netcoreapp3.1/IsPalindrome.AssemblyInfoInputs.cache
+/Volumes/Galaxy/Projects/IsPalindrome/obj/Debug/netcoreapp3.1/IsPalindrome.AssemblyInfo.cs
+/Volumes/Galaxy/Projects/IsPalindrome/obj/Debug/netcoreapp3.1/IsPalindrome.csproj.CoreCompileInputs.cache
+/Volumes/Galaxy/Projects/IsPalindrome/bin/Debug/netcoreapp3.1/IsPalindrome.deps.json
+/Volumes/Galaxy/Projects/IsPalindrome/bin/Debug/netcoreapp3.1/IsPalindrome.runtimeconfig.json
+/Volumes/Galaxy/Projects/IsPalindrome/bin/Debug/netcoreapp3.1/IsPalindrome.runtimeconfig.dev.json
+/Volumes/Galaxy/Projects/IsPalindrome/bin/Debug/netcoreapp3.1/IsPalindrome.dll
+/Volumes/Galaxy/Projects/IsPalindrome/bin/Debug/netcoreapp3.1/IsPalindrome.pdb
+/Volumes/Galaxy/Projects/IsPalindrome/obj/Debug/netcoreapp3.1/IsPalindrome.dll
+/Volumes/Galaxy/Projects/IsPalindrome/obj/Debug/netcoreapp3.1/IsPalindrome.pdb
+/Volumes/Galaxy/Projects/IsPalindrome/obj/Debug/netcoreapp3.1/IsPalindrome.genruntimeconfig.cache
