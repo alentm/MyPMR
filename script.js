@@ -61,7 +61,7 @@ window.onload = function () {
       await racpChar.writeValue(Uint8Array.from([0x01, 0x01])); // Request all records
 
       // Log readable characteristics
-      await logAllReadableCharacteristics(server);
+      await logAllReadableCharacteristics(device, server);
 
     } catch (error) {
       console.error(error);
@@ -101,9 +101,14 @@ function getUUIDName(uuid) {
 }
 
 // Logs all readable characteristics with UUID names and raw values
-async function logAllReadableCharacteristics(server) {
+async function logAllReadableCharacteristics(device, server) {
   const services = await server.getPrimaryServices();
-  const logData = [];
+  const logData = {
+    deviceId: device.id,
+    deviceName: device.name || "Unknown Device",
+    timestamp: new Date().toISOString(),
+    services: []
+  };
 
   for (const service of services) {
     const serviceName = getUUIDName(service.uuid);
