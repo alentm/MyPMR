@@ -2,17 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Glucose Monitor Reader</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bluetooth Glucose Monitor</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Glucose Monitor Reader</h1>
-    <button id="connect">Connect to Glucose Monitor</button>
-    <p id="status">Status: Not connected</p>
-    <div id="data"></div>
+    <h1>Glucose Monitor</h1>
+    <button onclick="connectToDevice()">Connect to Glucose Monitor</button>
+
+    <h2>Readings Table</h2>
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th>Serial</th>
+          <th>Glucose (mg/dL)</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Glucose Chart</h2>
+    <canvas id="glucoseChart"></canvas>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
