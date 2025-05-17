@@ -22,44 +22,76 @@ window.onload = function () {
       statusText.textContent = `✅ Connected to ${device.name || device.id}`;
 
       // NEW: Log all services and characteristics
-      async function logAllReadableCharacteristics(server) {
-  const serviceUUIDs = [
-    'device_information',
-    'glucose',
-    'battery_service'
-  ];
+      async function logDeviceAndGlucoseCharacteristicsToJSON(server) {
+  const knownServices = {
+    'device_information': {
+      name: 'Device Information',
+      characteristics: {
+        '00002a23-0000-1000-8000-00805f9b34fb': 'System ID',
+        '00002a24-0000-1000-8000-00805f9b34fb': 'Model Number',
+        '00002a26-0000-1000-8000-00805f9b34fb': 'Firmware Revision',
+        '00002a27-0000-1000-8000-00805f9b34fb': 'Hardware Revision',
+        '00002a28-0000-1000-8000-00805f9b34fb': 'Software Revision',
+        '00002a29-0000-1000-8000-00805f9b34fb': 'Manufacturer Name',
+        '00002a2a-0000-1000-8000-00805f9b34fb': 'IEEE Regulatory Cert',
+        '00002a50-0000-1000-8000-00805f9b34fb': 'PnP ID'
+      }
+    },
+    'glucose': {
+      name: 'Glucose Service',
+      characteristics: {
+        '00002a18-0000-1000-8000-00805f9b34fb': 'Glucose Measurement',
+        '00002a34-0000-1000-8000-00805f9b34fb': 'Glucose Measurement Context',
+        '00002a51-0000-1000-8000-00805f9b34fb': 'Glucose Feature',
+        '00002a52-0000-1000-8000-00805f9b34fb': 'Record Access Control Point'
+      }
+    }
+  };
 
-  for (const serviceUUID of serviceUUIDs) {
+  const logData = [];
+
+  for (const [serviceUUID, serviceInfo] of Object.entries(knownServices)) {
     try {
       const service = await server.getPrimaryService(serviceUUID);
       const characteristics = await service.getCharacteristics();
-
-      console.log(`\n=== Service: ${serviceUUID} ===`);
+      const serviceEntry = {
+        serviceUUID,
+        serviceName: serviceInfo.name,
+        characteristics: []
+      };
 
       for (const char of characteristics) {
+        const charName = serviceInfo.characteristics[char.uuid] || 'Unknown Characteristic';
+        let raw = [];
+        let decoded = null;
+
         if (char.properties.read) {
           try {
             const value = await char.readValue();
-            const raw = new Uint8Array(value.buffer);
-            console.log(`Characteristic: ${char.uuid}`);
-            console.log(`Raw Data: [${raw.join(', ')}]`);
-
-            // Optional: Try to decode as text
-            const decoded = new TextDecoder().decode(value.buffer).trim();
-            if (decoded) {
-              console.log(`Decoded: "${decoded}"`);
-            }
-          } catch (readError) {
-            console.warn(`Error reading ${char.uuid}:`, readError);
+            raw = Array.from(new Uint8Array(value.buffer));
+            const decodedText = new TextDecoder().decode(value.buffer).trim();
+            if (decodedText) decoded = decodedText;
+          } catch (e) {
+            console.warn(`Could not read ${charName}:`, e);
           }
-        } else {
-          console.log(`Characteristic: ${char.uuid} (Not Readable)`);
         }
+
+        serviceEntry.characteristics.push({
+          characteristicUUID: char.uuid,
+          name: charName,
+          rawValue: raw,
+          decodedValue: decoded
+        });
       }
-    } catch (serviceError) {
-      console.warn(`Error accessing service ${serviceUUID}:`, serviceError);
+
+      logData.push(serviceEntry);
+    } catch (err) {
+      console.warn(`Could not read service ${serviceUUID}`, err);
     }
   }
+
+  console.log('=== BLE Device JSON Dump ===');
+  console.log(JSON.stringify(logData, null, 2)); // Pretty printed
 }
       
       const glucoseService = await server.getPrimaryService('glucose');
