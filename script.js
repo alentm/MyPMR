@@ -30,34 +30,22 @@ window.onload = function () {
         console.log('Raw Glucose Data Bytes:', rawBytes);
         dataDisplay.innerHTML += `<p><strong>Raw Bytes:</strong> ${Array.from(rawBytes).join(', ')}</p>`;
 
-        const flags = value.getUint8(0);
-        const hasTimeOffset = (flags & 0x01) > 0;
-        const unitsAreMmol = (flags & 0x02) > 0;
-        const hasGlucoseConcentration = (flags & 0x04) > 0;
-
         const sequenceNumber = value.getUint16(1, true);
-        let offset = 3 + 7; // 1 flag + 2 sequence number + 7 base time
+        const year = value.getUint16(3, true);
+        const month = value.getUint8(5);
+        const day = value.getUint8(6);
+        const hours = value.getUint8(7);
+        const minutes = value.getUint8(8);
+        const seconds = value.getUint8(9);
+        const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
-        if (hasTimeOffset) offset += 2;
-
-        if (!hasGlucoseConcentration) {
-          dataDisplay.innerHTML += `<p><strong>No Glucose Value Present</strong></p>`;
-          return;
-        }
-
-        const glucoseConcentration = parseSFloat16(value, offset);
-        offset += 2;
-        const typeSample = value.getUint8(offset);
-
-        const displayValue = unitsAreMmol
-          ? (glucoseConcentration * 18.0182).toFixed(2) + " mg/dL"
-          : glucoseConcentration.toFixed(2) + " mg/dL";
+        const glucose = value.getUint8(12); // directly in mg/dL
 
         dataDisplay.innerHTML += `
           <p><strong>New Glucose Reading:</strong><br />
           Sequence #: ${sequenceNumber}<br />
-          Glucose: ${displayValue}<br />
-          Type/Sample: ${typeSample}</p>
+          Time: ${timestamp}<br />
+          Glucose: ${glucose} mg/dL</p>
         `;
       });
 
@@ -76,15 +64,4 @@ window.onload = function () {
       statusText.textContent = `⚠️ Error: ${error.message}`;
     }
   });
-
-  function parseSFloat16(dataView, offset) {
-    const raw = dataView.getUint16(offset, true);
-    let mantissa = raw & 0x0FFF;
-    let exponent = raw >> 12;
-
-    if (exponent >= 0x0008) exponent -= 0x10;
-    if (mantissa >= 0x0800) mantissa -= 0x1000;
-
-    return mantissa * Math.pow(10, exponent);
-  }
 };
