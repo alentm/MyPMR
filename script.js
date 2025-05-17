@@ -1,8 +1,3 @@
-let glucoseData = [];
-let chart;
-let serial = 1;
-let device = null;
-
 window.onload = function () {
   const connectButton = document.getElementById('connect');
   const statusText = document.getElementById('status');
@@ -16,121 +11,57 @@ window.onload = function () {
 
   connectButton.addEventListener('click', async () => {
     try {
-      device = await navigator.bluetooth.requestDevice({
+      const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: ['glucose'] }],
         optionalServices: ['battery_service', 'device_information']
       });
 
+      statusText.textContent = `🔗 Connecting to ${device.name || device.id}...`;
       const server = await device.gatt.connect();
-      const service = await server.getPrimaryService('glucose');
-      const characteristic = await service.getCharacteristic('glucose_measurement');
+      statusText.textContent = `✅ Connected to ${device.name || device.id}`;
 
-      await characteristic.startNotifications();
+      const glucoseService = await server.getPrimaryService('glucose');
+      const glucoseChar = await glucoseService.getCharacteristic('glucose_measurement');
 
-      characteristic.addEventListener('characteristicvaluechanged', event => {
+      await glucoseChar.startNotifications();
+      glucoseChar.addEventListener('characteristicvaluechanged', (event) => {
         const value = event.target.value;
+        const rawBytes = new Uint8Array(value.buffer);
+        console.log('Raw Glucose Data Bytes:', rawBytes);
+        dataDisplay.innerHTML += `<p><strong>Raw Bytes:</strong> ${Array.from(rawBytes).join(', ')}</p>`;
 
-        let rawGlucose = value.getUint8(12);
-        let glucose = rawGlucose < 40 ? rawGlucose * 11 : rawGlucose;
-
+        const sequenceNumber = value.getUint16(1, true);
         const year = value.getUint16(3, true);
         const month = value.getUint8(5);
         const day = value.getUint8(6);
         const hours = value.getUint8(7);
         const minutes = value.getUint8(8);
         const seconds = value.getUint8(9);
+        const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
-        const timestamp = new Date(year, month - 1, day, hours, minutes, seconds);
-        const formattedTime = timestamp.toLocaleString();
+        const glucose = value.getUint8(12); // directly in mg/dL
 
-        glucoseData.push({
-          serial: serial++,
-          value: glucose,
-          timestamp: formattedTime
-        });
-
-        updateTable();
-        updateChart();
+        dataDisplay.innerHTML += `
+          <p><strong>New Glucose Reading:</strong><br />
+          Sequence #: ${sequenceNumber}<br />
+          Time: ${timestamp}<br />
+          Glucose: ${glucose} mg/dL</p>
+        `;
       });
 
-      statusText.textContent = `✅ Connected to ${device.name || 'Glucose Monitor'}`;
-      connectButton.disabled = true;
+      const racpChar = await glucoseService.getCharacteristic('record_access_control_point');
+      await racpChar.startNotifications();
+      racpChar.addEventListener('characteristicvaluechanged', (event) => {
+        const val = new Uint8Array(event.target.value.buffer);
+        console.log('RACP Response:', val);
+        dataDisplay.innerHTML += `<p><strong>RACP Response:</strong> ${Array.from(val).join(', ')}</p>`;
+      });
+
+      await racpChar.writeValue(Uint8Array.from([0x01, 0x01])); // Request all records
 
     } catch (error) {
-      statusText.textContent = `❌ ${error.message}`;
-    }
-  });
-
-  // Disconnect gracefully
-  window.addEventListener('unload', () => {
-    if (device && device.gatt.connected) {
-      device.gatt.disconnect();
+      console.error(error);
+      statusText.textContent = `⚠️ Error: ${error.message}`;
     }
   });
 };
-
-function updateTable() {
-  const tbody = document.querySelector("#data-table tbody");
-  tbody.innerHTML = "";
-
-  glucoseData.forEach(entry => {
-    const row = `<tr>
-      <td>${entry.serial}</td>
-      <td>${entry.value}</td>
-      <td>${entry.timestamp}</td>
-    </tr>`;
-    tbody.innerHTML += row;
-  });
-}
-
-function updateChart() {
-  const labels = glucoseData.map(entry => entry.timestamp);
-  const values = glucoseData.map(entry => entry.value);
-
-  if (!chart) {
-    const ctx = document.getElementById("glucoseChart").getContext("2d");
-    chart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: labels,
-        datasets: [{
-          label: "Glucose Level (mg/dL)",
-          data: values,
-          fill: false,
-          borderColor: "#4CAF50",
-          tension: 0.3,
-          pointRadius: 4,
-          pointBackgroundColor: "#4CAF50"
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top'
-          }
-        },
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: "Time"
-            }
-          },
-          y: {
-            title: {
-              display: true,
-              text: "mg/dL"
-            },
-            beginAtZero: false
-          }
-        }
-      }
-    });
-  } else {
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = values;
-    chart.update();
-  }
-}
