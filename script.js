@@ -26,14 +26,17 @@ window.onload = function () {
       await glucoseChar.startNotifications();
       glucoseChar.addEventListener('characteristicvaluechanged', (event) => {
         const value = event.target.value;
-        const flags = value.getUint8(0);
+        const rawBytes = new Uint8Array(value.buffer);
+        console.log('Raw Glucose Data Bytes:', rawBytes);
+        dataDisplay.innerHTML += `<p><strong>Raw Bytes:</strong> ${Array.from(rawBytes).join(', ')}</p>`;
 
+        const flags = value.getUint8(0);
         const hasTimeOffset = (flags & 0x01) > 0;
         const unitsAreMmol = (flags & 0x02) > 0;
         const hasGlucoseConcentration = (flags & 0x04) > 0;
 
         const sequenceNumber = value.getUint16(1, true);
-        let offset = 3 + 7; // 1 flag + 2 seq + 7 base time
+        let offset = 3 + 7; // 1 flag + 2 sequence number + 7 base time
 
         if (hasTimeOffset) offset += 2;
 
@@ -43,7 +46,7 @@ window.onload = function () {
         }
 
         const glucoseConcentration = parseSFloat16(value, offset);
-        offset += 2; // for glucose
+        offset += 2;
         const typeSample = value.getUint8(offset);
 
         const displayValue = unitsAreMmol
@@ -66,7 +69,7 @@ window.onload = function () {
         dataDisplay.innerHTML += `<p><strong>RACP Response:</strong> ${Array.from(val).join(', ')}</p>`;
       });
 
-      await racpChar.writeValue(Uint8Array.from([0x01, 0x01]));
+      await racpChar.writeValue(Uint8Array.from([0x01, 0x01])); // Request all records
 
     } catch (error) {
       console.error(error);
