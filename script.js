@@ -26,6 +26,7 @@ window.onload = function () {
       await glucoseChar.startNotifications();
       glucoseChar.addEventListener('characteristicvaluechanged', (event) => {
         const value = event.target.value;
+        console.log('Raw value:', value);
         const rawBytes = new Uint8Array(value.buffer);
         console.log('Raw Glucose Data Bytes:', rawBytes);
         dataDisplay.innerHTML += `<p><strong>Raw Bytes:</strong> ${Array.from(rawBytes).join(', ')}</p>`;
