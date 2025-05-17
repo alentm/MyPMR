@@ -18,93 +18,7 @@ window.onload = function () {
 
       statusText.textContent = `🔗 Connecting to ${device.name || device.id}...`;
       const server = await device.gatt.connect();
-      await logAllReadableCharacteristics(server);
-      statusText.textContent = `✅ Connected to ${device.name || device.id}`;
-
-      // NEW: Log all services and characteristics
-      const knownUUIDs = {
-  // Services
-  "0000180a-0000-1000-8000-00805f9b34fb": "Device Information",
-  "00001808-0000-1000-8000-00805f9b34fb": "Glucose",
-  "0000180f-0000-1000-8000-00805f9b34fb": "Battery Service",
-
-  // Characteristics
-  "00002a23-0000-1000-8000-00805f9b34fb": "System ID",
-  "00002a24-0000-1000-8000-00805f9b34fb": "Model Number",
-  "00002a25-0000-1000-8000-00805f9b34fb": "Serial Number",
-  "00002a26-0000-1000-8000-00805f9b34fb": "Firmware Revision",
-  "00002a27-0000-1000-8000-00805f9b34fb": "Hardware Revision",
-  "00002a28-0000-1000-8000-00805f9b34fb": "Software Revision",
-  "00002a29-0000-1000-8000-00805f9b34fb": "Manufacturer Name",
-  "00002a2a-0000-1000-8000-00805f9b34fb": "IEEE 11073-20601 Regulatory Certification Data List",
-  "00002a50-0000-1000-8000-00805f9b34fb": "PnP ID",
-  "00002a08-0000-1000-8000-00805f9b34fb": "Date Time",
-  "00002a18-0000-1000-8000-00805f9b34fb": "Glucose Measurement",
-  "00002a34-0000-1000-8000-00805f9b34fb": "Glucose Measurement Context",
-  "00002a51-0000-1000-8000-00805f9b34fb": "Glucose Feature",
-  "00002a52-0060-1000-8000-00805f9b34fb": "Record Access Control Point",
-  "00002a19-0000-1000-8000-00805f9b34fb": "Battery Level"
-};
-
-function getUUIDName(uuid) {
-  const baseUUID = uuid.toLowerCase();
-  return knownUUIDs[baseUUID] || null;
-}
-
-async function logAllReadableCharacteristics(server) {
-  const services = await server.getPrimaryServices();
-  const logData = [];
-
-  for (const service of services) {
-    const serviceName = getUUIDName(service.uuid);
-    const characteristics = await service.getCharacteristics();
-
-    const serviceEntry = {
-      serviceUUID: service.uuid,
-      serviceName: serviceName || "Unknown Service",
-      characteristics: []
-    };
-
-    for (const char of characteristics) {
-      const charName = getUUIDName(char.uuid);
-      if (char.properties.read) {
-        try {
-          const value = await char.readValue();
-          const rawBytes = Array.from(new Uint8Array(value.buffer));
-          const decoded = new TextDecoder().decode(value.buffer).trim();
-
-          serviceEntry.characteristics.push({
-            characteristicUUID: char.uuid,
-            characteristicName: charName || "Unknown Characteristic",
-            rawValue: rawBytes,
-            decodedValue: decoded || null
-          });
-        } catch (err) {
-          serviceEntry.characteristics.push({
-            characteristicUUID: char.uuid,
-            characteristicName: charName || "Unknown Characteristic",
-            rawValue: [],
-            decodedValue: null,
-            error: err.message
-          });
-        }
-      } else {
-        serviceEntry.characteristics.push({
-          characteristicUUID: char.uuid,
-          characteristicName: charName || "Unknown Characteristic",
-          rawValue: null,
-          decodedValue: null,
-          note: 'Not readable'
-        });
-      }
-    }
-
-    logData.push(serviceEntry);
-  }
-
-  console.log('=== BLE Device Dump (With Names) ===');
-  console.log(JSON.stringify(logData, null, 2));
-}
+      statusText.textContent = `✅ Connected to ${device.name || device.id}`
       
       const glucoseService = await server.getPrimaryService('glucose');
       const glucoseChar = await glucoseService.getCharacteristic('glucose_measurement');
@@ -146,9 +60,90 @@ async function logAllReadableCharacteristics(server) {
 
       await racpChar.writeValue(Uint8Array.from([0x01, 0x01])); // Request all records
 
+      // Log readable characteristics
+      await logAllReadableCharacteristics(server);
+
     } catch (error) {
       console.error(error);
       statusText.textContent = `⚠️ Error: ${error.message}`;
     }
   });
 };
+
+
+// UUID Name mapping
+const knownUUIDs = {
+  "0000180a-0000-1000-8000-00805f9b34fb": "Device Information",
+  "00001808-0000-1000-8000-00805f9b34fb": "Glucose",
+  "0000180f-0000-1000-8000-00805f9b34fb": "Battery Service",
+
+  "00002a23-0000-1000-8000-00805f9b34fb": "System ID",
+  "00002a24-0000-1000-8000-00805f9b34fb": "Model Number",
+  "00002a25-0000-1000-8000-00805f9b34fb": "Serial Number",
+  "00002a26-0000-1000-8000-00805f9b34fb": "Firmware Revision",
+  "00002a27-0000-1000-8000-00805f9b34fb": "Hardware Revision",
+  "00002a28-0000-1000-8000-00805f9b34fb": "Software Revision",
+  "00002a29-0000-1000-8000-00805f9b34fb": "Manufacturer Name",
+  "00002a2a-0000-1000-8000-00805f9b34fb": "Regulatory Cert. Data List",
+  "00002a50-0000-1000-8000-00805f9b34fb": "PnP ID",
+
+  "00002a08-0000-1000-8000-00805f9b34fb": "Date Time",
+  "00002a18-0000-1000-8000-00805f9b34fb": "Glucose Measurement",
+  "00002a34-0000-1000-8000-00805f9b34fb": "Glucose Measurement Context",
+  "00002a51-0000-1000-8000-00805f9b34fb": "Glucose Feature",
+  "00002a52-0000-1000-8000-00805f9b34fb": "Record Access Control Point",
+
+  "00002a19-0000-1000-8000-00805f9b34fb": "Battery Level"
+};
+
+function getUUIDName(uuid) {
+  return knownUUIDs[uuid.toLowerCase()] || null;
+}
+
+// Logs all readable characteristics with UUID names and raw values
+async function logAllReadableCharacteristics(server) {
+  const services = await server.getPrimaryServices();
+  const logData = [];
+
+  for (const service of services) {
+    const serviceName = getUUIDName(service.uuid);
+    const characteristics = await service.getCharacteristics();
+
+    const serviceEntry = {
+      serviceUUID: service.uuid,
+      serviceName: serviceName || "Unknown Service",
+      characteristics: []
+    };
+
+    for (const char of characteristics) {
+      const charName = getUUIDName(char.uuid);
+      if (char.properties.read) {
+        try {
+          const value = await char.readValue();
+          const rawBytes = Array.from(new Uint8Array(value.buffer));
+          const decoded = new TextDecoder().decode(value.buffer).trim();
+
+          serviceEntry.characteristics.push({
+            characteristicUUID: char.uuid,
+            characteristicName: charName || "Unknown Characteristic",
+            rawValue: rawBytes,
+            decodedValue: decoded || null
+          });
+        } catch (err) {
+          serviceEntry.characteristics.push({
+            characteristicUUID: char.uuid,
+            characteristicName: charName || "Unknown Characteristic",
+            rawValue: [],
+            decodedValue: null,
+            error: err.message
+          });
+        }
+      }
+    }
+
+    logData.push(serviceEntry);
+  }
+
+  console.log('=== BLE Device Dump ===');
+  console.log(JSON.stringify(logData, null, 2));
+}
