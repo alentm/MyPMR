@@ -29,19 +29,23 @@ window.onload = function () {
         const flags = value.getUint8(0);
 
         const hasTimeOffset = (flags & 0x01) > 0;
-        const hasTypeSampleLocation = (flags & 0x04) > 0;
         const unitsAreMmol = (flags & 0x02) > 0;
+        const hasGlucoseConcentration = (flags & 0x04) > 0;
 
         const sequenceNumber = value.getUint16(1, true);
-        let offset = 3 + 7; // After flags + sequence + base time
+        let offset = 3 + 7; // 1 flag + 2 seq + 7 base time
 
         if (hasTimeOffset) offset += 2;
 
-        // Use corrected SFloat parser
-        const glucoseConcentration = parseSFloat16(value, offset);
-        offset += 2;
+        if (!hasGlucoseConcentration) {
+          dataDisplay.innerHTML += `<p><strong>No Glucose Value Present</strong></p>`;
+          return;
+        }
 
-        let unit = unitsAreMmol ? "mmol/L" : "mg/dL";
+        const glucoseConcentration = parseSFloat16(value, offset);
+        offset += 2; // for glucose
+        const typeSample = value.getUint8(offset);
+
         const displayValue = unitsAreMmol
           ? (glucoseConcentration * 18.0182).toFixed(2) + " mg/dL"
           : glucoseConcentration.toFixed(2) + " mg/dL";
@@ -49,7 +53,8 @@ window.onload = function () {
         dataDisplay.innerHTML += `
           <p><strong>New Glucose Reading:</strong><br />
           Sequence #: ${sequenceNumber}<br />
-          Glucose: ${displayValue}</p>
+          Glucose: ${displayValue}<br />
+          Type/Sample: ${typeSample}</p>
         `;
       });
 
@@ -61,8 +66,7 @@ window.onload = function () {
         dataDisplay.innerHTML += `<p><strong>RACP Response:</strong> ${Array.from(val).join(', ')}</p>`;
       });
 
-      // Request all historical records
-      await racpChar.writeValue(Uint8Array.from([0x01, 0x01])); // Report all stored records
+      await racpChar.writeValue(Uint8Array.from([0x01, 0x01]));
 
     } catch (error) {
       console.error(error);
@@ -70,14 +74,13 @@ window.onload = function () {
     }
   });
 
-  // IEEE-11073 16-bit SFLOAT decoder
   function parseSFloat16(dataView, offset) {
     const raw = dataView.getUint16(offset, true);
     let mantissa = raw & 0x0FFF;
     let exponent = raw >> 12;
 
-    if (exponent >= 0x0008) exponent = exponent - 0x10; // Signed 4-bit exponent
-    if (mantissa >= 0x0800) mantissa = mantissa - 0x1000; // Signed 12-bit mantissa
+    if (exponent >= 0x0008) exponent -= 0x10;
+    if (mantissa >= 0x0800) mantissa -= 0x1000;
 
     return mantissa * Math.pow(10, exponent);
   }
