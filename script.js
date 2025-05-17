@@ -1,12 +1,8 @@
-let glucoseData = [];
-let chart;
-let serial = 1;
-
 async function connectToDevice() {
   try {
     const device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: ['health_thermometer'] }],
-      optionalServices: ['battery_service', 0x1808]
+      acceptAllDevices: true,
+      optionalServices: [0x1808, 'battery_service']
     });
 
     const server = await device.gatt.connect();
@@ -45,52 +41,5 @@ async function connectToDevice() {
 
   } catch (error) {
     alert("Error: " + error.message);
-  }
-}
-
-function updateTable() {
-  const tbody = document.querySelector("#data-table tbody");
-  tbody.innerHTML = "";
-
-  glucoseData.forEach(entry => {
-    const row = `<tr>
-      <td>${entry.serial}</td>
-      <td>${entry.value}</td>
-      <td>${entry.timestamp}</td>
-    </tr>`;
-    tbody.innerHTML += row;
-  });
-}
-
-function updateChart() {
-  const labels = glucoseData.map(entry => entry.timestamp);
-  const values = glucoseData.map(entry => entry.value);
-
-  if (!chart) {
-    const ctx = document.getElementById("glucoseChart").getContext("2d");
-    chart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: labels,
-        datasets: [{
-          label: "Glucose Level (mg/dL)",
-          data: values,
-          fill: false,
-          borderColor: "#4CAF50",
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          x: { display: true, title: { display: true, text: 'Time' } },
-          y: { display: true, title: { display: true, text: 'mg/dL' } }
-        }
-      }
-    });
-  } else {
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = values;
-    chart.update();
   }
 }
