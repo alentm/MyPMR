@@ -1,8 +1,12 @@
+let glucoseData = [];
+let chart;
+let serial = 1;
+
 async function connectToDevice() {
   try {
     const device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: [0x1808, 'battery_service']
+      filters: [{ services: [0x1808] }],
+      optionalServices: ['battery_service']
     });
 
     const server = await device.gatt.connect();
@@ -40,6 +44,72 @@ async function connectToDevice() {
     document.getElementById("data-table").insertAdjacentHTML("beforebegin", "<p>Connected. Waiting for data...</p>");
 
   } catch (error) {
-    alert("Error: " + error.message);
+    alert("Connection failed: " + error.message);
+  }
+}
+
+function updateTable() {
+  const tbody = document.querySelector("#data-table tbody");
+  tbody.innerHTML = "";
+
+  glucoseData.forEach(entry => {
+    const row = `<tr>
+      <td>${entry.serial}</td>
+      <td>${entry.value}</td>
+      <td>${entry.timestamp}</td>
+    </tr>`;
+    tbody.innerHTML += row;
+  });
+}
+
+function updateChart() {
+  const labels = glucoseData.map(entry => entry.timestamp);
+  const values = glucoseData.map(entry => entry.value);
+
+  if (!chart) {
+    const ctx = document.getElementById("glucoseChart").getContext("2d");
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Glucose Level (mg/dL)",
+          data: values,
+          fill: false,
+          borderColor: "#4CAF50",
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: "#4CAF50"
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: "Time"
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: "mg/dL"
+            },
+            beginAtZero: false
+          }
+        }
+      }
+    });
+  } else {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update();
   }
 }
