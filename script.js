@@ -18,17 +18,45 @@ window.onload = function () {
 
       statusText.textContent = `🔗 Connecting to ${device.name || device.id}...`;
       const server = await device.gatt.connect();
+      await logAllCharacteristics(server);
       statusText.textContent = `✅ Connected to ${device.name || device.id}`;
 
       // NEW: Log all services and characteristics
-      const services = await server.getPrimaryServices();
-      for (const service of services) {
-        console.log(`Service: ${service.uuid}`);
-        const characteristics = await service.getCharacteristics();
-        for (const char of characteristics) {
-          console.log(`  Characteristic: ${char.uuid}`);
+      async function logAllCharacteristics(server) {
+  const serviceUUIDs = [
+    'device_information',
+    'glucose',
+    'battery_service'
+  ];
+
+  for (const serviceUUID of serviceUUIDs) {
+    try {
+      const service = await server.getPrimaryService(serviceUUID);
+      const characteristics = await service.getCharacteristics();
+
+      console.log(`\nService: ${serviceUUID}`);
+      for (const char of characteristics) {
+        let value;
+        try {
+          value = await char.readValue();
+          const raw = new Uint8Array(value.buffer);
+          console.log(`Characteristic: ${char.uuid}`);
+          console.log(`Raw Value: [${raw.join(', ')}]`);
+
+          // Attempt to decode if it's a string
+          const text = new TextDecoder().decode(value.buffer);
+          if (text.trim()) {
+            console.log(`Decoded Text: "${text}"`);
+          }
+        } catch (readError) {
+          console.log(`Characteristic: ${char.uuid} (Not Readable)`);
         }
       }
+    } catch (serviceError) {
+      console.warn(`Could not access service ${serviceUUID}:`, serviceError);
+    }
+  }
+}
 
       const glucoseService = await server.getPrimaryService('glucose');
       const glucoseChar = await glucoseService.getCharacteristic('glucose_measurement');
