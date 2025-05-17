@@ -1,32 +1,26 @@
+let glucoseData = [];
+let chart;
+let serial = 1;
+
 async function connectToDevice() {
   try {
     const device = await navigator.bluetooth.requestDevice({
       filters: [{ services: ['health_thermometer'] }],
-      optionalServices: ['battery_service', 0x1808] // Glucose Service
+      optionalServices: ['battery_service', 0x1808]
     });
 
     const server = await device.gatt.connect();
-
-    const service = await server.getPrimaryService(0x1808); // Glucose Service
-    const characteristic = await service.getCharacteristic(0x2A18); // Glucose Measurement
+    const service = await server.getPrimaryService(0x1808);
+    const characteristic = await service.getCharacteristic(0x2A18);
 
     await characteristic.startNotifications();
 
-    characteristic.addEventListener('characteristicvaluechanged', (event) => {
+    characteristic.addEventListener('characteristicvaluechanged', event => {
       const value = event.target.value;
 
-      // Extract glucose raw byte
       let rawGlucose = value.getUint8(12);
-      let glucose;
+      let glucose = rawGlucose < 40 ? rawGlucose * 11 : rawGlucose;
 
-      // Decide whether to apply multiplier
-      if (rawGlucose < 40) {
-        glucose = rawGlucose * 11;
-      } else {
-        glucose = rawGlucose;
-      }
-
-      // Extract timestamp
       const year = value.getUint16(3, true);
       const month = value.getUint8(5);
       const day = value.getUint8(6);
@@ -35,16 +29,68 @@ async function connectToDevice() {
       const seconds = value.getUint8(9);
 
       const timestamp = new Date(year, month - 1, day, hours, minutes, seconds);
+      const formattedTime = timestamp.toLocaleString();
 
-      document.getElementById("output").innerHTML = `
-        <p><strong>Glucose:</strong> ${glucose} mg/dL</p>
-        <p><strong>Time:</strong> ${timestamp.toLocaleString()}</p>
-      `;
+      glucoseData.push({
+        serial: serial++,
+        value: glucose,
+        timestamp: formattedTime
+      });
+
+      updateTable();
+      updateChart();
     });
 
-    document.getElementById("output").innerHTML = `<p>Connected. Waiting for data...</p>`;
+    document.getElementById("data-table").insertAdjacentHTML("beforebegin", "<p>Connected. Waiting for data...</p>");
 
   } catch (error) {
-    document.getElementById("output").innerHTML = `<p>Error: ${error.message}</p>`;
+    alert("Error: " + error.message);
+  }
+}
+
+function updateTable() {
+  const tbody = document.querySelector("#data-table tbody");
+  tbody.innerHTML = "";
+
+  glucoseData.forEach(entry => {
+    const row = `<tr>
+      <td>${entry.serial}</td>
+      <td>${entry.value}</td>
+      <td>${entry.timestamp}</td>
+    </tr>`;
+    tbody.innerHTML += row;
+  });
+}
+
+function updateChart() {
+  const labels = glucoseData.map(entry => entry.timestamp);
+  const values = glucoseData.map(entry => entry.value);
+
+  if (!chart) {
+    const ctx = document.getElementById("glucoseChart").getContext("2d");
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Glucose Level (mg/dL)",
+          data: values,
+          fill: false,
+          borderColor: "#4CAF50",
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { display: true, title: { display: true, text: 'Time' } },
+          y: { display: true, title: { display: true, text: 'mg/dL' } }
+        }
+      }
+    });
+  } else {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update();
   }
 }
