@@ -20,6 +20,16 @@ window.onload = function () {
       const server = await device.gatt.connect();
       statusText.textContent = `✅ Connected to ${device.name || device.id}`;
 
+      // NEW: Log all services and characteristics
+      const services = await server.getPrimaryServices();
+      for (const service of services) {
+        console.log(`Service: ${service.uuid}`);
+        const characteristics = await service.getCharacteristics();
+        for (const char of characteristics) {
+          console.log(`  Characteristic: ${char.uuid}`);
+        }
+      }
+
       const glucoseService = await server.getPrimaryService('glucose');
       const glucoseChar = await glucoseService.getCharacteristic('glucose_measurement');
 
