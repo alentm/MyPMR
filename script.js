@@ -18,7 +18,7 @@ window.onload = function () {
 
       statusText.textContent = `🔗 Connecting to ${device.name || device.id}...`;
       const server = await device.gatt.connect();
-      await logAllCharacteristics(server);
+      await logAllReadableCharacteristics(server);
       statusText.textContent = `✅ Connected to ${device.name || device.id}`;
 
       // NEW: Log all services and characteristics
