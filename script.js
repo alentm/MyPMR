@@ -1,52 +1,73 @@
 let glucoseData = [];
 let chart;
 let serial = 1;
+let device = null;
 
-async function connectToDevice() {
-  try {
-    const device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [0x1808] }],
-      optionalServices: ['battery_service']
-    });
+window.onload = function () {
+  const connectButton = document.getElementById('connect');
+  const statusText = document.getElementById('status');
+  const dataDisplay = document.getElementById('data');
 
-    const server = await device.gatt.connect();
-    const service = await server.getPrimaryService(0x1808);
-    const characteristic = await service.getCharacteristic(0x2A18);
+  if (!navigator.bluetooth) {
+    statusText.textContent = '❌ Web Bluetooth is not supported on this device or browser.';
+    connectButton.disabled = true;
+    return;
+  }
 
-    await characteristic.startNotifications();
-
-    characteristic.addEventListener('characteristicvaluechanged', event => {
-      const value = event.target.value;
-
-      let rawGlucose = value.getUint8(12);
-      let glucose = rawGlucose < 40 ? rawGlucose * 11 : rawGlucose;
-
-      const year = value.getUint16(3, true);
-      const month = value.getUint8(5);
-      const day = value.getUint8(6);
-      const hours = value.getUint8(7);
-      const minutes = value.getUint8(8);
-      const seconds = value.getUint8(9);
-
-      const timestamp = new Date(year, month - 1, day, hours, minutes, seconds);
-      const formattedTime = timestamp.toLocaleString();
-
-      glucoseData.push({
-        serial: serial++,
-        value: glucose,
-        timestamp: formattedTime
+  connectButton.addEventListener('click', async () => {
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: ['glucose'] }],
+        optionalServices: ['battery_service', 'device_information']
       });
 
-      updateTable();
-      updateChart();
-    });
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService('glucose');
+      const characteristic = await service.getCharacteristic('glucose_measurement');
 
-    document.getElementById("data-table").insertAdjacentHTML("beforebegin", "<p>Connected. Waiting for data...</p>");
+      await characteristic.startNotifications();
 
-  } catch (error) {
-    alert("Connection failed: " + error.message);
-  }
-}
+      characteristic.addEventListener('characteristicvaluechanged', event => {
+        const value = event.target.value;
+
+        let rawGlucose = value.getUint8(12);
+        let glucose = rawGlucose < 40 ? rawGlucose * 11 : rawGlucose;
+
+        const year = value.getUint16(3, true);
+        const month = value.getUint8(5);
+        const day = value.getUint8(6);
+        const hours = value.getUint8(7);
+        const minutes = value.getUint8(8);
+        const seconds = value.getUint8(9);
+
+        const timestamp = new Date(year, month - 1, day, hours, minutes, seconds);
+        const formattedTime = timestamp.toLocaleString();
+
+        glucoseData.push({
+          serial: serial++,
+          value: glucose,
+          timestamp: formattedTime
+        });
+
+        updateTable();
+        updateChart();
+      });
+
+      statusText.textContent = `✅ Connected to ${device.name || 'Glucose Monitor'}`;
+      connectButton.disabled = true;
+
+    } catch (error) {
+      statusText.textContent = `❌ ${error.message}`;
+    }
+  });
+
+  // Disconnect gracefully
+  window.addEventListener('unload', () => {
+    if (device && device.gatt.connected) {
+      device.gatt.disconnect();
+    }
+  });
+};
 
 function updateTable() {
   const tbody = document.querySelector("#data-table tbody");
