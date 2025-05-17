@@ -22,7 +22,7 @@ window.onload = function () {
       statusText.textContent = `✅ Connected to ${device.name || device.id}`;
 
       // NEW: Log all services and characteristics
-      async function logAllCharacteristics(server) {
+      async function logAllReadableCharacteristics(server) {
   const serviceUUIDs = [
     'device_information',
     'glucose',
@@ -34,30 +34,34 @@ window.onload = function () {
       const service = await server.getPrimaryService(serviceUUID);
       const characteristics = await service.getCharacteristics();
 
-      console.log(`\nService: ${serviceUUID}`);
-      for (const char of characteristics) {
-        let value;
-        try {
-          value = await char.readValue();
-          const raw = new Uint8Array(value.buffer);
-          console.log(`Characteristic: ${char.uuid}`);
-          console.log(`Raw Value: [${raw.join(', ')}]`);
+      console.log(`\n=== Service: ${serviceUUID} ===`);
 
-          // Attempt to decode if it's a string
-          const text = new TextDecoder().decode(value.buffer);
-          if (text.trim()) {
-            console.log(`Decoded Text: "${text}"`);
+      for (const char of characteristics) {
+        if (char.properties.read) {
+          try {
+            const value = await char.readValue();
+            const raw = new Uint8Array(value.buffer);
+            console.log(`Characteristic: ${char.uuid}`);
+            console.log(`Raw Data: [${raw.join(', ')}]`);
+
+            // Optional: Try to decode as text
+            const decoded = new TextDecoder().decode(value.buffer).trim();
+            if (decoded) {
+              console.log(`Decoded: "${decoded}"`);
+            }
+          } catch (readError) {
+            console.warn(`Error reading ${char.uuid}:`, readError);
           }
-        } catch (readError) {
+        } else {
           console.log(`Characteristic: ${char.uuid} (Not Readable)`);
         }
       }
     } catch (serviceError) {
-      console.warn(`Could not access service ${serviceUUID}:`, serviceError);
+      console.warn(`Error accessing service ${serviceUUID}:`, serviceError);
     }
   }
 }
-
+      
       const glucoseService = await server.getPrimaryService('glucose');
       const glucoseChar = await glucoseService.getCharacteristic('glucose_measurement');
 
