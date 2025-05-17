@@ -146,7 +146,7 @@ async function logAllReadableCharacteristics(device, server) {
       }
     }
 
-    logData.push(serviceEntry);
+    logData.services.push(serviceEntry);
   }
 
   console.log('=== BLE Device Dump ===');
