@@ -28,9 +28,7 @@ window.onload = function () {
       await glucoseChar.startNotifications();
       glucoseChar.addEventListener('characteristicvaluechanged', (event) => {
         const value = event.target.value;
-        console.log('Raw value:', value);
         const rawBytes = new Uint8Array(value.buffer);
-        console.log('Raw Glucose Data Bytes:', rawBytes);
         dataDisplay.innerHTML += `<p><strong>Raw Bytes:</strong> ${Array.from(rawBytes).join(', ')}</p>`;
 
         const sequenceNumber = value.getUint16(1, true);
@@ -56,7 +54,6 @@ window.onload = function () {
       await racpChar.startNotifications();
       racpChar.addEventListener('characteristicvaluechanged', (event) => {
         const val = new Uint8Array(event.target.value.buffer);
-        console.log('RACP Response:', val);
         dataDisplay.innerHTML += `<p><strong>RACP Response:</strong> ${Array.from(val).join(', ')}</p>`;
       });
 
