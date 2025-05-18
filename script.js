@@ -77,33 +77,33 @@ window.onload = function () {
 
 
 // UUID Name mapping
-const knownUUIDs = {
-  "0000180a-0000-1000-8000-00805f9b34fb": "Device Information",
-  "00001808-0000-1000-8000-00805f9b34fb": "Glucose",
-  "0000180f-0000-1000-8000-00805f9b34fb": "Battery Service",
+//const knownUUIDs = {
+  //"0000180a-0000-1000-8000-00805f9b34fb": "Device Information",
+  //"00001808-0000-1000-8000-00805f9b34fb": "Glucose",
+  //"0000180f-0000-1000-8000-00805f9b34fb": "Battery Service",
 
-  "00002a23-0000-1000-8000-00805f9b34fb": "System ID",
-  "00002a24-0000-1000-8000-00805f9b34fb": "Model Number",
-  "00002a25-0000-1000-8000-00805f9b34fb": "Serial Number",
-  "00002a26-0000-1000-8000-00805f9b34fb": "Firmware Revision",
-  "00002a27-0000-1000-8000-00805f9b34fb": "Hardware Revision",
-  "00002a28-0000-1000-8000-00805f9b34fb": "Software Revision",
-  "00002a29-0000-1000-8000-00805f9b34fb": "Manufacturer Name",
-  "00002a2a-0000-1000-8000-00805f9b34fb": "Regulatory Cert. Data List",
-  "00002a50-0000-1000-8000-00805f9b34fb": "PnP ID",
+  //"00002a23-0000-1000-8000-00805f9b34fb": "System ID",
+  //"00002a24-0000-1000-8000-00805f9b34fb": "Model Number",
+  //"00002a25-0000-1000-8000-00805f9b34fb": "Serial Number",
+  //"00002a26-0000-1000-8000-00805f9b34fb": "Firmware Revision",
+  //"00002a27-0000-1000-8000-00805f9b34fb": "Hardware Revision",
+  //"00002a28-0000-1000-8000-00805f9b34fb": "Software Revision",
+  //"00002a29-0000-1000-8000-00805f9b34fb": "Manufacturer Name",
+  //"00002a2a-0000-1000-8000-00805f9b34fb": "Regulatory Cert. Data List",
+  //"00002a50-0000-1000-8000-00805f9b34fb": "PnP ID",
 
-  "00002a08-0000-1000-8000-00805f9b34fb": "Date Time",
-  "00002a18-0000-1000-8000-00805f9b34fb": "Glucose Measurement",
-  "00002a34-0000-1000-8000-00805f9b34fb": "Glucose Measurement Context",
-  "00002a51-0000-1000-8000-00805f9b34fb": "Glucose Feature",
-  "00002a52-0000-1000-8000-00805f9b34fb": "Record Access Control Point",
+  //"00002a08-0000-1000-8000-00805f9b34fb": "Date Time",
+  //"00002a18-0000-1000-8000-00805f9b34fb": "Glucose Measurement",
+  //"00002a34-0000-1000-8000-00805f9b34fb": "Glucose Measurement Context",
+  //"00002a51-0000-1000-8000-00805f9b34fb": "Glucose Feature",
+  //"00002a52-0000-1000-8000-00805f9b34fb": "Record Access Control Point",
 
-  "00002a19-0000-1000-8000-00805f9b34fb": "Battery Level"
-};
+  //"00002a19-0000-1000-8000-00805f9b34fb": "Battery Level"
+//};
 
-function getUUIDName(uuid) {
-  return knownUUIDs[uuid.toLowerCase()] || null;
-}
+//function getUUIDName(uuid) {
+  //return knownUUIDs[uuid.toLowerCase()] || null;
+//}
 
 // Logs all readable characteristics with UUID names and raw values
 async function logAllReadableCharacteristics(device, server, glucoseReadings) {
@@ -159,5 +159,5 @@ async function logAllReadableCharacteristics(device, server, glucoseReadings) {
   console.log(JSON.stringify(logData, null, 2));
   
   await saveToFirebase('glucose_monitor', logData);
-  return logData; // In case you want to use it elsewhere
+  //return logData; // In case you want to use it elsewhere
 }
