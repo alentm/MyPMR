@@ -153,11 +153,11 @@ async function logAllReadableCharacteristics(device, server, glucoseReadings) {
   //  }
 
     //logData.services.push(serviceEntry);
-  }
+ // }
 
   console.log('=== BLE Device Dump ===');
   console.log(JSON.stringify(logData, null, 2));
   
   await saveToFirebase('glucose_monitor', logData);
-  //return logData; // In case you want to use it elsewhere
+  return logData; // In case you want to use it elsewhere
 }
