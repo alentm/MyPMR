@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-analytics.js";
-import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
+import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/11.7.3/firebase-database.js";
 //TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -23,6 +23,24 @@ const analytics = getAnalytics(app);
 // Initialize Realtime Database
 const database = getDatabase(app);
 
+
+// function to compare the deviceids
+async function findEntryByDeviceId(deviceId) {
+  
+  const snapshot = await get(ref(database, 'glucose_monitor'));
+
+  if (snapshot.exists()) {
+    const entries = snapshot.val();
+
+    for (const key in entries) {
+      if (entries[key].deviceId === deviceId) {
+        return { key, data: entries[key] };
+      }
+    }
+  }
+
+  return null; // No match found
+}
 // Function to save data to Firebase
 export async function saveToFirebase(path, data) {
   try {
