@@ -1,3 +1,5 @@
+import { saveToFirebase } from './firebase-logic.js';
+
 window.onload = function () {
   const connectButton = document.getElementById('connect');
   const statusText = document.getElementById('status');
@@ -151,4 +153,7 @@ async function logAllReadableCharacteristics(device, server) {
 
   console.log('=== BLE Device Dump ===');
   console.log(JSON.stringify(logData, null, 2));
+  
+
+  return logData; // In case you want to use it elsewhere
 }
