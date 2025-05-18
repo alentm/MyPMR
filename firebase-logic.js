@@ -21,7 +21,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 // Initialize Realtime Database
-const db = getDatabase(app);
+const database = getDatabase(app);
 
 // Function to save data to Firebase
 export async function saveToFirebase(path, data) {
