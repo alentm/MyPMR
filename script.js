@@ -1,5 +1,6 @@
 import { saveToFirebase } from './firebase-logic.js';
 
+const glucoseReadings = [];
 window.onload = function () {
   const connectButton = document.getElementById('connect');
   const statusText = document.getElementById('status');
@@ -41,7 +42,12 @@ window.onload = function () {
         const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
         const glucose = value.getUint8(12); // directly in mg/dL
-
+        glucoseReadings.push({
+          sequenceNumber,
+          timestamp,
+          glucose,
+          rawBytes: Array.from(rawBytes)
+        });
         dataDisplay.innerHTML += `
           <p><strong>New Glucose Reading:</strong><br />
           Sequence #: ${sequenceNumber}<br />
@@ -106,46 +112,47 @@ async function logAllReadableCharacteristics(device, server) {
     deviceId: device.id,
     deviceName: device.name || "Unknown Device",
     timestamp: new Date().toISOString(),
-    services: []
+    glucoseReadings: glucoseReadings
+    //services: []
   };
 
-  for (const service of services) {
-    const serviceName = getUUIDName(service.uuid);
-    const characteristics = await service.getCharacteristics();
+  //for (const service of services) {
+    //const serviceName = getUUIDName(service.uuid);
+    //const characteristics = await service.getCharacteristics();
 
-    const serviceEntry = {
-      serviceUUID: service.uuid,
-      serviceName: serviceName || "Unknown Service",
-      characteristics: []
-    };
+   // const serviceEntry = {
+      //serviceUUID: service.uuid,
+     // serviceName: serviceName || "Unknown Service",
+     // characteristics: []
+    //};
 
-    for (const char of characteristics) {
-      const charName = getUUIDName(char.uuid);
-      if (char.properties.read) {
-        try {
-          const value = await char.readValue();
-          const rawBytes = Array.from(new Uint8Array(value.buffer));
-          const decoded = new TextDecoder().decode(value.buffer).trim();
+    //for (const char of characteristics) {
+      //const charName = getUUIDName(char.uuid);
+     // if (char.properties.read) {
+        //try {
+        //  const value = await char.readValue();
+          //const rawBytes = Array.from(new Uint8Array(value.buffer));
+          //const decoded = new TextDecoder().decode(value.buffer).trim();
 
-          serviceEntry.characteristics.push({
-            characteristicUUID: char.uuid,
-            characteristicName: charName || "Unknown Characteristic",
-            rawValue: rawBytes,
-            decodedValue: decoded || null
-          });
-        } catch (err) {
-          serviceEntry.characteristics.push({
-            characteristicUUID: char.uuid,
-            characteristicName: charName || "Unknown Characteristic",
-            rawValue: [],
-            decodedValue: null,
-            error: err.message
-          });
-        }
-      }
-    }
+          //serviceEntry.characteristics.push({
+            //characteristicUUID: char.uuid,
+           // characteristicName: charName || "Unknown Characteristic",
+          //  rawValue: rawBytes,
+           // decodedValue: decoded || null
+        //  });
+       // } catch (err) {
+          //serviceEntry.characteristics.push({
+           // characteristicUUID: char.uuid,
+            //characteristicName: charName || "Unknown Characteristic",
+           // rawValue: [],
+            //decodedValue: null,
+           // error: err.message
+         // });
+       // }
+     // }
+  //  }
 
-    logData.services.push(serviceEntry);
+    //logData.services.push(serviceEntry);
   }
 
   console.log('=== BLE Device Dump ===');
